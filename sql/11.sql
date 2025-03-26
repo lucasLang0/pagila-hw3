@@ -11,3 +11,42 @@
  * All of the subsequent problems in this homework can be solved with LATERAL JOINs
  * (or slightly less conveniently with subqueries).
  */
+
+
+
+
+
+
+SELECT 
+    c.first_name, 
+    c.last_name, 
+    film.title, 
+    latjoin.rental_date
+FROM customer c
+LEFT JOIN LATERAL (
+    SELECT 
+        r.rental_date, 
+        r.inventory_id
+    FROM rental r
+    WHERE r.customer_id = c.customer_id
+    ORDER BY r.rental_date DESC
+    LIMIT 1
+) AS latjoin ON true
+JOIN inventory USING (inventory_id)
+JOIN film USING (film_id)
+ORDER BY 
+    c.last_name, 
+    c.first_name;
+
+
+
+
+
+
+
+
+
+
+
+
+
