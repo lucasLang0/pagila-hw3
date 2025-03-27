@@ -7,35 +7,29 @@
 
 
 
-
-
 SELECT 
-    customer.customer_id, 
-    customer.first_name, 
-    customer.last_name
-FROM customer
-LEFT JOIN LATERAL (
-    SELECT 
-        customer_id, 
-        category_id
-    FROM rental
-    JOIN inventory USING (inventory_id)
-    JOIN film USING (film_id)
-    JOIN film_category USING (film_id)
-    JOIN category USING (category_id)
-    WHERE name = 'Action'
-    AND rental.customer_id = customer.customer_id
-    LIMIT 5
-) recent ON true
-GROUP BY 
-    customer.customer_id, 
-    customer.first_name, 
-    customer.last_name
-HAVING 
-    COUNT(CASE WHEN category_id = (
-        SELECT category_id 
-        FROM category 
-        WHERE name = 'Action'
-    ) THEN 1 END) = 4
-ORDER BY customer_id;
+    c.customer_id,
+    c.first_name,
+    c.last_name
+FROM customer c
+CROSS JOIN LATERAL (
+    SELECT COUNT(*) AS action_count
+    FROM rental r
+    JOIN inventory i USING (inventory_id)
+    JOIN film f USING (film_id)
+    JOIN film_category fc USING (film_id)
+    JOIN category ca USING (category_id)
+    WHERE r.customer_id = c.customer_id
+    AND ca.name = 'Action'
+    AND r.rental_date IN (
+        SELECT r2.rental_date
+        FROM rental r2
+        WHERE r2.customer_id = c.customer_id
+        ORDER BY r2.rental_date DESC
+        LIMIT 5
+    )
+) AS recent_action_movies
+WHERE recent_action_movies.action_count > 3
+ORDER BY c.customer_id;
+
 
